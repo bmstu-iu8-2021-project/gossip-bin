@@ -1,5 +1,6 @@
 use gossip::whisper::Message;
 use gossip::{self, neighborhood};
+use std::net::ToSocketAddrs;
 use std::sync::mpsc;
 use std::thread;
 
@@ -46,11 +47,14 @@ fn main() {
     let init_node_list: Vec<String> = std::env::args().collect();
     let mut connect_node = Vec::<std::net::SocketAddr>::new();
     if init_node_list.len() > 1 {
-        connect_node.push(
-            init_node_list[1]
-                .parse()
-                .unwrap_or_else(move |_| "0.0.0.0:0".parse().unwrap()),
-        );
+        for i in &init_node_list[1..] {
+            let mut uri = i
+                .to_socket_addrs()
+                .expect("Unable to parse initial connections URI's");
+            let addr = uri.next();
+            let result = addr.unwrap();
+            connect_node.push(result);
+        }
     }
     let config = gossip::config::Config {
         max_send_peers: 5,
